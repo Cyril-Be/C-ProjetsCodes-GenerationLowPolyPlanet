@@ -1,0 +1,8 @@
+# Fichiers générés
+planet
+planet.bmp
+planet.png
+
+# Objets de compilation
+*.o
+*.a
