@@ -297,7 +297,24 @@ typedef struct {
     Color  col;
 } BiomeEntry;
 
-static BiomeEntry BIOME[] = {
+/* ─── Types de planètes ─────────────────────────────────────── */
+typedef enum {
+    PLANET_TERRAN    = 0,  /* Tellurique type Terre               */
+    PLANET_VOLCANIC  = 1,  /* Volcanique — lave et basalte        */
+    PLANET_ICE       = 2,  /* Monde glacé                         */
+    PLANET_DESERT    = 3,  /* Désertique — sable et roches        */
+    PLANET_BARREN    = 4,  /* Mort / rocheux — type Lune          */
+    PLANET_ALIEN     = 5,  /* Exotique extraterrestre             */
+    PLANET_TYPE_COUNT = 6
+} PlanetType;
+
+static const char *PLANET_NAMES[] = {
+    "Tellurique", "Volcanique", "Glaciaire",
+    "Désertique", "Mort",       "Alien"
+};
+
+/* Table de biomes — planète Tellurique (Terre) */
+static BiomeEntry BIOME_TERRAN[] = {
     { -1.20, { 0.04, 0.10, 0.28 } }, /* océan abyssal       */
     { -0.55, { 0.06, 0.18, 0.45 } }, /* océan profond       */
     { -0.18, { 0.09, 0.32, 0.64 } }, /* mer                 */
@@ -313,31 +330,89 @@ static BiomeEntry BIOME[] = {
     {  0.82, { 0.85, 0.87, 0.95 } }, /* neige légère        */
     {  1.20, { 0.95, 0.97, 1.00 } }, /* neige épaisse       */
 };
-static int NBIOME = 14;
 
-static Color biome_color(double h, double m) {
-    /* Légère influence de l'humidité sur la couleur */
+/* Table de biomes — planète Volcanique */
+static BiomeEntry BIOME_VOLCANIC[] = {
+    { -1.20, { 0.10, 0.04, 0.02 } }, /* basalte abyssal     */
+    { -0.50, { 0.18, 0.06, 0.03 } }, /* lave refroidie      */
+    { -0.10, { 0.75, 0.18, 0.03 } }, /* lave vive           */
+    {  0.05, { 0.92, 0.38, 0.04 } }, /* lave incandescente  */
+    {  0.18, { 0.55, 0.12, 0.04 } }, /* lave semi-refroidie */
+    {  0.35, { 0.25, 0.10, 0.07 } }, /* basalte             */
+    {  0.52, { 0.20, 0.14, 0.10 } }, /* roche volcanique    */
+    {  0.70, { 0.28, 0.23, 0.18 } }, /* cendres             */
+    {  1.20, { 0.20, 0.16, 0.14 } }, /* pic cendreux        */
+};
+
+/* Table de biomes — monde Glaciaire */
+static BiomeEntry BIOME_ICE[] = {
+    { -1.20, { 0.04, 0.08, 0.18 } }, /* glace profonde      */
+    { -0.50, { 0.10, 0.22, 0.48 } }, /* glace bleue         */
+    { -0.05, { 0.45, 0.62, 0.80 } }, /* banquise            */
+    {  0.10, { 0.70, 0.84, 0.92 } }, /* neige tassée        */
+    {  0.35, { 0.82, 0.90, 0.96 } }, /* glacier             */
+    {  0.65, { 0.90, 0.94, 0.98 } }, /* glace éternelle     */
+    {  1.20, { 0.96, 0.98, 1.00 } }, /* pic de glace        */
+};
+
+/* Table de biomes — planète Désertique */
+static BiomeEntry BIOME_DESERT[] = {
+    { -1.20, { 0.26, 0.16, 0.09 } }, /* fond rocheux        */
+    { -0.35, { 0.48, 0.30, 0.16 } }, /* plaine sèche        */
+    {  0.00, { 0.72, 0.52, 0.28 } }, /* sable               */
+    {  0.15, { 0.80, 0.60, 0.30 } }, /* dunes               */
+    {  0.30, { 0.65, 0.40, 0.22 } }, /* falaises rouges     */
+    {  0.48, { 0.50, 0.32, 0.18 } }, /* mesas rocheuses     */
+    {  0.65, { 0.40, 0.28, 0.16 } }, /* highlands           */
+    {  0.82, { 0.52, 0.44, 0.34 } }, /* roche aride         */
+    {  1.20, { 0.65, 0.58, 0.48 } }, /* pic aride           */
+};
+
+/* Table de biomes — monde Mort (type Lune) */
+static BiomeEntry BIOME_BARREN[] = {
+    { -1.20, { 0.10, 0.09, 0.09 } }, /* cratère sombre      */
+    { -0.50, { 0.20, 0.19, 0.18 } }, /* plaine lunaire      */
+    {  0.00, { 0.30, 0.29, 0.28 } }, /* sol gris            */
+    {  0.25, { 0.40, 0.39, 0.37 } }, /* roche grise         */
+    {  0.50, { 0.52, 0.50, 0.48 } }, /* plateau             */
+    {  0.72, { 0.63, 0.61, 0.59 } }, /* montagne rocheuse   */
+    {  1.20, { 0.78, 0.76, 0.74 } }, /* pic                 */
+};
+
+/* Table de biomes — planète Alien exotique */
+static BiomeEntry BIOME_ALIEN[] = {
+    { -1.20, { 0.06, 0.04, 0.18 } }, /* mer violette profonde */
+    { -0.50, { 0.12, 0.06, 0.35 } }, /* mer violette          */
+    { -0.05, { 0.20, 0.16, 0.55 } }, /* mer peu profonde      */
+    {  0.00, { 0.45, 0.15, 0.55 } }, /* rivage alien          */
+    {  0.12, { 0.15, 0.52, 0.38 } }, /* plaine cyan           */
+    {  0.28, { 0.10, 0.60, 0.28 } }, /* forêt alien           */
+    {  0.42, { 0.30, 0.52, 0.18 } }, /* colline étrange       */
+    {  0.58, { 0.52, 0.42, 0.14 } }, /* hauteurs alien        */
+    {  0.72, { 0.42, 0.30, 0.55 } }, /* roche violacée        */
+    {  1.20, { 0.78, 0.72, 0.92 } }, /* cristaux alien        */
+};
+
+static Color biome_color(double h, double m,
+                          BiomeEntry *biomes, int nbiome, int use_humidity) {
     int i;
-    Color c = BIOME[NBIOME - 1].col;
-    for (i = 0; i < NBIOME - 1; i++) {
-        if (h <= BIOME[i + 1].h) {
-            c = BIOME[i].col;
+    Color c = biomes[nbiome - 1].col;
+    for (i = 0; i < nbiome - 1; i++) {
+        if (h <= biomes[i + 1].h) {
+            c = biomes[i].col;
             break;
         }
     }
     /* Humidité : rend les zones terrestres un peu plus vertes/sombres */
-    if (h > 0.05 && h < 0.70) {
+    if (use_humidity && h > 0.05 && h < 0.70) {
         c.r -= m * 0.07;
         c.g += m * 0.06;
         c.b += m * 0.02;
     }
     /* Clamp */
-    if (c.r < 0) c.r = 0;
-    if (c.r > 1) c.r = 1;
-    if (c.g < 0) c.g = 0;
-    if (c.g > 1) c.g = 1;
-    if (c.b < 0) c.b = 0;
-    if (c.b > 1) c.b = 1;
+    if (c.r < 0) c.r = 0; if (c.r > 1) c.r = 1;
+    if (c.g < 0) c.g = 0; if (c.g > 1) c.g = 1;
+    if (c.b < 0) c.b = 0; if (c.b > 1) c.b = 1;
     return c;
 }
 
